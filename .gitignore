@@ -1,40 +1,74 @@
 ```php
-# Environment variables
+# Compiled and build artifacts
+*.pyc
+*.class
+*.o
+*.obj
+*.out
+*.exe
+*.dll
+*.so
+*.a
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+target/
+.gradle/
+
+# Build directories
+dist/
+build/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Environment files
 .env
 .env.local
 *.env.*
 
-# Logs
-*.log
-
-# Temporary files
-*.tmp
-*.swp
-
-# Dependencies
-vendor/
-
-# Build artifacts
-dist/
-build/
-target/
-
-# Cache directories
-.cache/
-*.cache
-
-# IDE specific
+# Editors and IDE
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# OS generated files
+# System files
 .DS_Store
 Thumbs.db
 
-# PHP specific
-*.php~
-phpunit.xml
+# Coverage
 coverage/
+htmlcov/
+.coverage
+
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```

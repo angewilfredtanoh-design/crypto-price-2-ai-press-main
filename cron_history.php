@@ -5,7 +5,7 @@
  * Executez ce script toutes les 6 heures via Cron.
  * 
  * Exemple de commande crontab :
- * Toutes les 6 heures: php /workspace/cron_history.php >> logs/history_cron.log 2>&1
+ * Toutes les 6 heures: php __DIR__/cron_history.php >> logs/history_cron.log 2>&1
  */
 
 // Configuration du temps d'exécution

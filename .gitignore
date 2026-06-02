@@ -20,22 +20,18 @@ __pycache__/
 target/
 .gradle/
 
-# Build directories
-dist/
-build/
-
 # Logs and temp files
 *.log
 *.tmp
 *.swp
 *.swo
 
-# Environment files
+# Environment
 .env
 .env.local
 *.env.*
 
-# Editors and IDE
+# Editors
 .vscode/
 .idea/
 

@@ -435,13 +435,51 @@ function initializeDatabase() {
                     VALUES (25, 25, 25, 25, 100, $now)");
         
         // Initialiser le portefeuille virtuel
-        $pdo->exec("INSERT INTO virtual_portfolio (initial_capital, current_cash, total_value, created_at, last_update) 
+        $pdo->exec("INSERT INTO virtual_portfolio (initial_capital, current_cash, total_value, created_at, last_update)
                     VALUES (1000000, 1000000, 1000000, $now, $now)");
-        
+
+        // ============================================================================
+        // NOUVELLES TABLES POUR L'HISTORIQUE DES ANALYSES ET AGENDA
+        // ============================================================================
+
+        // Table: analyses_history (historique complet des analyses avec audit)
+        $pdo->exec("CREATE TABLE IF NOT EXISTS analyses_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            crypto_id TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            score INTEGER NOT NULL,
+            conseil TEXT NOT NULL CHECK(conseil IN ('ACHAT', 'VENTE', 'ATTENTE')),
+            analyse_text TEXT NOT NULL,
+            sparkline_snapshot TEXT DEFAULT '[]',
+            rsi_snapshot REAL DEFAULT 50,
+            volume_snapshot REAL DEFAULT 0,
+            price_at_analysis REAL DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            was_correct INTEGER DEFAULT NULL,
+            price_at_audit REAL DEFAULT 0,
+            audit_date DATETIME DEFAULT NULL
+        )");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_history_crypto ON analyses_history(crypto_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_history_date ON analyses_history(created_at)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_history_correct ON analyses_history(was_correct)");
+
+        // Table: market_reviews (revues de marché périodiques)
+        $pdo->exec("CREATE TABLE IF NOT EXISTS market_reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            review_text TEXT NOT NULL,
+            global_advice TEXT,
+            top_picks TEXT DEFAULT '[]',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            period_start DATETIME,
+            period_end DATETIME
+        )");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_reviews_date ON market_reviews(created_at)");
+
+        appLog('History and agenda system tables initialized successfully');
         appLog('Virtual trading system tables initialized successfully');
-        
+
         appLog('Database initialization completed successfully');
-        
+
         return $pdo;
         
     } catch (PDOException $e) {

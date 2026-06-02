@@ -25,18 +25,18 @@ class HistoryEngine {
      * Archive une analyse récente depuis la table 'individual_analysis' vers 'analyses_history'
      * Évite les doublons trop rapprochés (moins de 5 minutes).
      */
-    public function archiveAnalysis($cryptoId, $symbol) {
+    public function archiveAnalysis($coinId, $symbol) {
         try {
-            // Récupérer la dernière analyse en cours
-            $stmt = $this->pdo->prepare("SELECT * FROM individual_analysis WHERE crypto_id = ? ORDER BY updated_at DESC LIMIT 1");
-            $stmt->execute([$cryptoId]);
+            // Récupérer la dernière analyse en cours (colonne coin_id dans individual_analysis)
+            $stmt = $this->pdo->prepare("SELECT * FROM individual_analysis WHERE coin_id = ? ORDER BY generated_at DESC LIMIT 1");
+            $stmt->execute([$coinId]);
             $current = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$current) return false;
 
             // Vérifier si on a déjà archivé cette version spécifique récemment
             $check = $this->pdo->prepare("SELECT id FROM analyses_history WHERE crypto_id = ? AND created_at > datetime('now', '-5 minutes')");
-            $check->execute([$cryptoId]);
+            $check->execute([$coinId]);
             if ($check->fetch()) return false; // Déjà archivé récemment
 
             // Déterminer le conseil basé sur le score
@@ -45,12 +45,18 @@ class HistoryEngine {
             if ($score >= 65) $conseil = 'ACHAT';
             elseif ($score <= 35) $conseil = 'VENTE';
 
-            // Snapshot des données techniques
-            $sparkline = $current['sparkline_7d'] ?? '[]';
-            $rsi = $current['rsi_14'] ?? 50;
-            $vol = $current['volume_24h'] ?? 0;
-            $price = $current['price'] ?? 0;
-            $analysisText = $current['analysis_summary'] ?? 'Analyse non disponible';
+            // Snapshot des données techniques (adapter aux colonnes réelles)
+            $sparkline = '[]'; // Pas de sparkline dans individual_analysis actuel
+            $rsi = 50; // Valeur par défaut
+            $vol = 0; // Sera récupéré ailleurs si besoin
+            $price = 0; // Sera récupéré de la table coins
+            $analysisText = $current['analysis_text'] ?? 'Analyse non disponible';
+            
+            // Récupérer le prix actuel depuis la table coins (colonne current_price)
+            $priceStmt = $this->pdo->prepare("SELECT current_price FROM coins WHERE id = ? LIMIT 1");
+            $priceStmt->execute([$coinId]);
+            $priceData = $priceStmt->fetch(PDO::FETCH_ASSOC);
+            $price = $priceData ? (float)$priceData['current_price'] : 0;
 
             $insert = $this->pdo->prepare("
                 INSERT INTO analyses_history 
@@ -59,7 +65,7 @@ class HistoryEngine {
             ");
 
             return $insert->execute([
-                $cryptoId,
+                $coinId,
                 $symbol,
                 $score,
                 $conseil,
@@ -68,7 +74,7 @@ class HistoryEngine {
                 $rsi,
                 $vol,
                 $price,
-                $current['updated_at'] ?? date('Y-m-d H:i:s')
+                date('Y-m-d H:i:s', $current['generated_at'] ?? time())
             ]);
         } catch (Exception $e) {
             error_log("Erreur archiveAnalysis: " . $e->getMessage());

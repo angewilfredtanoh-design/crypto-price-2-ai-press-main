@@ -2,10 +2,10 @@
 /**
  * cron_history.php
  * Script d'automatisation pour l'archivage et l'audit des analyses.
- * À exécuter via Cron toutes les 6 heures.
+ * Executez ce script toutes les 6 heures via Cron.
  * 
- * Commande crontab recommandée :
- * 0 */6 * * * php /workspace/cron_history.php >> /workspace/logs/history_cron.log 2>&1
+ * Exemple de commande crontab :
+ * Toutes les 6 heures: php /workspace/cron_history.php >> logs/history_cron.log 2>&1
  */
 
 // Configuration du temps d'exécution
@@ -29,10 +29,22 @@ try {
     // 1. Archiver les analyses actuelles
     logMessage("Archivage des analyses en cours...");
     
-    // Récupérer toutes les cryptos suivies dans individual_analysis
+    // Récupérer toutes les cryptos suivies dans individual_analysis (colonne coin_id)
     $pdo = new PDO("sqlite:" . DB_FILE);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $cryptos = $pdo->query("SELECT crypto_id, symbol FROM individual_analysis")->fetchAll(PDO::FETCH_ASSOC);
+    $cryptos = $pdo->query("SELECT DISTINCT coin_id as crypto_id, 
+        CASE 
+            WHEN coin_id = 'bitcoin' THEN 'BTC'
+            WHEN coin_id = 'ethereum' THEN 'ETH'
+            WHEN coin_id = 'binancecoin' THEN 'BNB'
+            WHEN coin_id = 'ripple' THEN 'XRP'
+            WHEN coin_id = 'cardano' THEN 'ADA'
+            WHEN coin_id = 'solana' THEN 'SOL'
+            WHEN coin_id = 'dogecoin' THEN 'DOGE'
+            WHEN coin_id = 'polkadot' THEN 'DOT'
+            ELSE UPPER(coin_id)
+        END as symbol 
+        FROM individual_analysis")->fetchAll(PDO::FETCH_ASSOC);
 
     $countArchive = 0;
     foreach ($cryptos as $c) {

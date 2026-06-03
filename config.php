@@ -375,18 +375,27 @@ define('UI_CONFIG', [
 /**
  * Logger centralisé compatible Hostinger
  * @param string $message Message à logger
- * @param string $level Niveau de log (INFO, WARNING, ERROR, CRITICAL)
+ * @param string $level Niveau de log (INFO, WARNING, ERROR, CRITICAL, API, DEBUG)
  */
 function appLog($message, $level = 'INFO') {
-    $timestamp = date('Y-m-d H:i:s');
-    $logLine = "[$timestamp] [$level] $message" . PHP_EOL;
+    // Définir le répertoire de logs
+    if (!defined('LOG_DIR')) {
+        define('LOG_DIR', ROOT_DIR . '/logs');
+        if (!is_dir(LOG_DIR)) {
+            mkdir(LOG_DIR, 0755, true);
+        }
+    }
     
+    $date = date('Y-m-d H:i:s');
+    $logLine = "[$date] [$level] $message\n";
+    
+    // Déterminer le fichier de log approprié
     if ($level === 'ERROR' || $level === 'CRITICAL') {
-        file_put_contents(ERROR_LOG, $logLine, FILE_APPEND | LOCK_EX);
+        file_put_contents(LOG_DIR . '/error.log', $logLine, FILE_APPEND | LOCK_EX);
     } elseif ($level === 'API') {
-        file_put_contents(API_LOG, $logLine, FILE_APPEND | LOCK_EX);
+        file_put_contents(LOG_DIR . '/api_usage.log', $logLine, FILE_APPEND | LOCK_EX);
     } else {
-        file_put_contents(LOG_FILE, $logLine, FILE_APPEND | LOCK_EX);
+        file_put_contents(LOG_DIR . '/app.log', $logLine, FILE_APPEND | LOCK_EX);
     }
 }
 

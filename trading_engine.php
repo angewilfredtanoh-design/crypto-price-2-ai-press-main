@@ -54,7 +54,11 @@ try {
     
     $cash = $portfolio['current_cash'];
     $investmentPerTrade = TRADING_CONFIG['investment_per_trade'] ?? 5000;
-    $maxPositions = TRADING_CONFIG['max_positions'] ?? 20;
+    // Limite stricte de positions actives (max 15 au lieu de 20 pour réduire le risque)
+    $maxPositions = min(15, TRADING_CONFIG['max_positions'] ?? 15);
+    
+    // Stop-loss virtuel : -15% sur une position
+    $stopLossPercent = -15;
     
     $tradesExecuted = 0;
     
@@ -151,11 +155,18 @@ Justifie cet achat en 2-3 phrases techniques et précises. Mentionne les indicat
         }
         
         // ========================================================================
-        // LOGIQUE DE VENTE (score <= 35)
+        // LOGIQUE DE VENTE (score <= 35 OU STOP-LOSS)
         // ========================================================================
-        elseif ($score <= $sellThreshold) {
-            $existingPosition = $tradingLogic->getPosition($coinId);
-            
+        $existingPosition = $tradingLogic->getPosition($coinId);
+        
+        // Vérifier le stop-loss virtuel (-15%)
+        $stopLossTriggered = false;
+        if ($existingPosition && $existingPosition['pnl_percent'] <= $stopLossPercent) {
+            $stopLossTriggered = true;
+            appLog("STOP-LOSS TRIGGERED: $symbol - P&L: {$existingPosition['pnl_percent']}% (seuil: $stopLossPercent%)", 'WARNING');
+        }
+        
+        if ($score <= $sellThreshold || $stopLossTriggered) {
             if (!$existingPosition) {
                 // Pas de position à vendre
                 continue;
@@ -165,52 +176,71 @@ Justifie cet achat en 2-3 phrases techniques et précises. Mentionne les indicat
             $quantity = $existingPosition['quantity'];
             $sellValue = $quantity * $currentPrice;
             
+            // Déterminer la raison de la vente
+            $saleReason = $stopLossTriggered ? "Stop-loss automatique" : "Vente par score bas";
+            
             // Demander justification à Mistral
             $investedAmount = $existingPosition['invested_amount'];
             $unrealizedPnl = $existingPosition['unrealized_pnl'];
             $pnlPercent = $existingPosition['pnl_percent'];
             
-            $prompt = "Tu es un trader IA expert. Tu vas vendre ta position $symbol (ID: $coinId) à $currentPrice €.
-Score IA actuel: $score/100 (seuil de vente: $sellThreshold)
-Quantité: $quantity
-Prix moyen d'achat: {$existingPosition['avg_buy_price']} €
-P&L non réalisé: $unrealizedPnl € (" . number_format($pnlPercent, 2) . "%)
-
-Justifie cette vente en 2-3 phrases. Explique si c'est un stop-loss, take-profit, ou changement de tendance.";
+            $prompt = "Tu es un trader IA expert. Tu vas vendre ta position $symbol (ID: $coinId) à $currentPrice €.\n";
+            if ($stopLossTriggered) {
+                $prompt .= "** STOP-LOSS DÉCLENCHÉ **\n";
+                $prompt .= "Perte actuelle: $unrealizedPnl € (" . number_format($pnlPercent, 2) . "%)\n";
+                $prompt .= "Seuil de stop-loss: $stopLossPercent%\n\n";
+            } else {
+                $prompt .= "Score IA actuel: $score/100 (seuil de vente: $sellThreshold)\n";
+            }
+            $prompt .= "Quantité: $quantity\n
+Prix moyen d'achat: {$existingPosition['avg_buy_price']} €\n
+P&L non réalisé: $unrealizedPnl € (" . number_format($pnlPercent, 2) . "%)\n
+\nJustifie cette vente en 2-3 phrases. Explique si c'est un stop-loss, take-profit, ou changement de tendance.";
             
-            $justification = $mistralClient->callMistral($prompt, 'mistral-small-2603');
+            try {
+                $justification = $mistralClient->callMistral($prompt, 'mistral-small-2603');
+            } catch (Exception $e) {
+                appLog("Error getting AI justification for SELL $symbol: " . $e->getMessage(), 'ERROR');
+                $justification = "Vente automatique - Justification IA indisponible";
+            }
             
             // Exécuter la vente
-            appLog("EXECUTING SELL: $symbol x $quantity @ $currentPrice € (Score: $score, P&L: $unrealizedPnl €)");
+            appLog("EXECUTING SELL: $symbol x $quantity @ $currentPrice € (Score: $score, P&L: $unrealizedPnl €, Reason: $saleReason)");
             
-            $result = $tradingLogic->closePosition($coinId, $currentPrice, $quantity);
-            
-            if ($result) {
-                // Calculer la période de détention
-                $holdingPeriodHours = max(1, (time() - $existingPosition['first_purchase']) / 3600);
+            try {
+                $result = $tradingLogic->closePosition($coinId, $currentPrice, $quantity);
                 
-                $tradeId = $tradingLogic->recordTrade(
-                    $coinId,
-                    $symbol,
-                    'SELL',
-                    $quantity,
-                    $currentPrice,
-                    $sellValue,
-                    $score,
-                    "Vente automatique - Score: $score",
-                    $justification,
-                    $existingPosition['id']
-                );
-                
-                // Mettre à jour le trade avec le PnL réalisé
-                $tradingLogic->updateTradePnl($tradeId, $result['realized_pnl'], $result['pnl_percent'], $holdingPeriodHours);
-                
-                // Mettre à jour le cash
-                $stmt = $pdo->prepare("UPDATE virtual_portfolio SET current_cash = current_cash + ? WHERE id = 1");
-                $stmt->execute([$sellValue]);
-                
-                $tradesExecuted++;
-                appLog("SELL executed for $symbol. Trade ID: $tradeId, Realized P&L: {$result['realized_pnl']} €");
+                if ($result) {
+                    // Calculer la période de détention
+                    $holdingPeriodHours = max(1, (time() - $existingPosition['first_purchase']) / 3600);
+                    
+                    $tradeId = $tradingLogic->recordTrade(
+                        $coinId,
+                        $symbol,
+                        'SELL',
+                        $quantity,
+                        $currentPrice,
+                        $sellValue,
+                        $score,
+                        "$saleReason - Score: $score",
+                        $justification,
+                        $existingPosition['id']
+                    );
+                    
+                    // Mettre à jour le trade avec le PnL réalisé
+                    $tradingLogic->updateTradePnl($tradeId, $result['realized_pnl'], $result['pnl_percent'], $holdingPeriodHours);
+                    
+                    // Mettre à jour le cash
+                    $stmt = $pdo->prepare("UPDATE virtual_portfolio SET current_cash = current_cash + ? WHERE id = 1");
+                    $stmt->execute([$sellValue]);
+                    
+                    $tradesExecuted++;
+                    appLog("SELL executed for $symbol. Trade ID: $tradeId, Realized P&L: {$result['realized_pnl']} €, Reason: $saleReason");
+                } else {
+                    appLog("SELL failed for $symbol: closePosition returned false", 'ERROR');
+                }
+            } catch (Exception $e) {
+                appLog("CRITICAL ERROR executing SELL for $symbol: " . $e->getMessage(), 'CRITICAL');
             }
         }
     }
@@ -284,6 +314,8 @@ Ton style : professionnel, pédagogique, orienté données.";
     
 } catch (Exception $e) {
     appLog('TRADING ENGINE CRITICAL ERROR: ' . $e->getMessage(), 'CRITICAL');
+    // Enregistrer la stack trace pour débogage
+    appLog('Stack trace: ' . $e->getTraceAsString(), 'CRITICAL');
 } finally {
     // Supprimer le lock
     if (file_exists($lockFile)) {

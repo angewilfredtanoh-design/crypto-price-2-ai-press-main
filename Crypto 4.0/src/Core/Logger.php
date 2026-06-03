@@ -21,11 +21,14 @@ class Logger {
     
     private function __construct() {
         if (!defined('LOG_DIR')) {
-            require_once dirname(__DIR__, 2) . '/config.php';
+            $configPath = dirname(__DIR__, 2) . '/config.php';
+            if (file_exists($configPath)) {
+                require_once $configPath;
+            }
         }
         
         $this->logDir = defined('LOG_DIR') ? LOG_DIR : dirname(__DIR__, 2) . '/logs';
-        $this->minLevel = self::LOG_LEVELS['INFO'] ?? 1;
+        $this->minLevel = self::LOG_LEVELS['DEBUG'] ?? 0;
         
         if (!is_dir($this->logDir)) {
             mkdir($this->logDir, 0755, true);
@@ -39,27 +42,27 @@ class Logger {
         return self::$instance;
     }
     
-    public function debug(string $message, string $context = ''): void {
-        $this->log('DEBUG', $message, $context);
+    public static function debug(string $message, string $context = ''): void {
+        self::getInstance()->writeLog('DEBUG', $message, $context);
     }
     
-    public function info(string $message, string $context = ''): void {
-        $this->log('INFO', $message, $context);
+    public static function info(string $message, string $context = ''): void {
+        self::getInstance()->writeLog('INFO', $message, $context);
     }
     
-    public function warning(string $message, string $context = ''): void {
-        $this->log('WARNING', $message, $context);
+    public static function warning(string $message, string $context = ''): void {
+        self::getInstance()->writeLog('WARNING', $message, $context);
     }
     
-    public function error(string $message, string $context = ''): void {
-        $this->log('ERROR', $message, $context);
+    public static function error(string $message, string $context = ''): void {
+        self::getInstance()->writeLog('ERROR', $message, $context);
     }
     
-    public function critical(string $message, string $context = ''): void {
-        $this->log('CRITICAL', $message, $context);
+    public static function critical(string $message, string $context = ''): void {
+        self::getInstance()->writeLog('CRITICAL', $message, $context);
     }
     
-    private function log(string $level, string $message, string $context = ''): void {
+    private function writeLog(string $level, string $message, string $context = ''): void {
         $levelValue = self::LOG_LEVELS[$level] ?? 1;
         
         if ($levelValue < $this->minLevel) {
@@ -78,12 +81,5 @@ class Logger {
         if (isset(self::LOG_LEVELS[$level])) {
             $this->minLevel = self::LOG_LEVELS[$level];
         }
-    }
-}
-
-// Fonction helper pour compatibilité avec l'ancien code
-if (!function_exists('appLog')) {
-    function appLog(string $message, string $level = 'INFO', string $context = ''): void {
-        Logger::getInstance()->log($level, $message, $context);
     }
 }

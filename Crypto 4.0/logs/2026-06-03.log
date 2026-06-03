@@ -1,0 +1,120 @@
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): test_data (TTL: 300s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: test_data
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:test:test_6a2070a949c45
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:test:test_6a2070a949c45 (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:test:test_6a2070a949c7a:requests
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:test:test_6a2070a949c7a:requests (TTL: 60s)
+[2026-06-03 20:21:29] [DEBUG] Cache MISS: ratelimit:test:test_6a2070a949cb0:29675181
+[2026-06-03 20:21:29] [DEBUG] Cache SET (File): ratelimit:test:test_6a2070a949cb0:29675181 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): test_data (TTL: 300s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: test_data
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:test:test_6a2070aeaab44
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:test:test_6a2070aeaab44 (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:test:test_6a2070aeaab8a:requests
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:test:test_6a2070aeaab8a:requests (TTL: 60s)
+[2026-06-03 20:21:34] [DEBUG] Cache MISS: ratelimit:test:test_6a2070aeaabca:29675181
+[2026-06-03 20:21:34] [DEBUG] Cache SET (File): ratelimit:test:test_6a2070aeaabca:29675181 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): test_data (TTL: 300s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): test_data
+[2026-06-03 20:21:46] [DEBUG] Cache MISS: ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache HIT (File): ratelimit:api_trading:user_123
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:api_trading:user_123 (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache MISS: ratelimit:test:test_6a2070bab539f
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:test:test_6a2070bab539f (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache MISS: ratelimit:test:test_6a2070bab5416:requests
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:test:test_6a2070bab5416:requests (TTL: 60s)
+[2026-06-03 20:21:46] [DEBUG] Cache MISS: ratelimit:test:test_6a2070bab548e:29675181
+[2026-06-03 20:21:46] [DEBUG] Cache SET (File): ratelimit:test:test_6a2070bab548e:29675181 (TTL: 60s)

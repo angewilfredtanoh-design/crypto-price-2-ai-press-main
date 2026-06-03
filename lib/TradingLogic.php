@@ -21,8 +21,10 @@ class TradingLogic {
             $this->pdo = new PDO('sqlite:' . DB_FILE);
             $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->mistralClient = new MistralClient();
+            appLog('TradingLogic initialized successfully', 'INFO');
         } catch (Exception $e) {
             appLog('TradingLogic initialization failed: ' . $e->getMessage(), 'CRITICAL');
+            appLog('Stack trace: ' . $e->getTraceAsString(), 'CRITICAL');
             throw $e;
         }
     }
@@ -69,6 +71,7 @@ class TradingLogic {
             return true;
         } catch (Exception $e) {
             appLog('updatePortfolioValue failed: ' . $e->getMessage(), 'ERROR');
+            appLog('Stack trace: ' . $e->getTraceAsString(), 'ERROR');
             return false;
         }
     }
@@ -132,6 +135,7 @@ class TradingLogic {
             }
         } catch (Exception $e) {
             appLog('openOrUpdatePosition failed: ' . $e->getMessage(), 'ERROR');
+            appLog('Stack trace: ' . $e->getTraceAsString(), 'ERROR');
             return false;
         }
     }
@@ -183,6 +187,7 @@ class TradingLogic {
             ];
         } catch (Exception $e) {
             appLog('closePosition failed: ' . $e->getMessage(), 'ERROR');
+            appLog('Stack trace: ' . $e->getTraceAsString(), 'ERROR');
             return false;
         }
     }
@@ -220,6 +225,7 @@ class TradingLogic {
             return true;
         } catch (Exception $e) {
             appLog('updatePositionPrices failed: ' . $e->getMessage(), 'ERROR');
+            appLog('Stack trace: ' . $e->getTraceAsString(), 'ERROR');
             return false;
         }
     }
@@ -246,6 +252,7 @@ class TradingLogic {
             return $tradeId;
         } catch (Exception $e) {
             appLog('recordTrade failed: ' . $e->getMessage(), 'ERROR');
+            appLog('Stack trace: ' . $e->getTraceAsString(), 'ERROR');
             return false;
         }
     }
@@ -265,6 +272,7 @@ class TradingLogic {
             return true;
         } catch (Exception $e) {
             appLog('updateTradePnl failed: ' . $e->getMessage(), 'ERROR');
+            appLog('Stack trace: ' . $e->getTraceAsString(), 'ERROR');
             return false;
         }
     }
@@ -327,6 +335,7 @@ class TradingLogic {
             return true;
         } catch (Exception $e) {
             appLog('updatePortfolioStats failed: ' . $e->getMessage(), 'ERROR');
+            appLog('Stack trace: ' . $e->getTraceAsString(), 'ERROR');
             return false;
         }
     }
@@ -417,6 +426,7 @@ class TradingLogic {
             return $auditId;
         } catch (Exception $e) {
             appLog('auditTrade failed: ' . $e->getMessage(), 'ERROR');
+            appLog('Stack trace: ' . $e->getTraceAsString(), 'ERROR');
             return false;
         }
     }
@@ -530,6 +540,7 @@ Valide-tu ces ajustements ? Propose une brève justification.";
             return $newWeights;
         } catch (Exception $e) {
             appLog('adjustCriteriaWeights failed: ' . $e->getMessage(), 'ERROR');
+            appLog('Stack trace: ' . $e->getTraceAsString(), 'ERROR');
             return false;
         }
     }
@@ -560,6 +571,7 @@ Valide-tu ces ajustements ? Propose une brève justification.";
             return $audited;
         } catch (Exception $e) {
             appLog('auditAllPendingTrades failed: ' . $e->getMessage(), 'ERROR');
+            appLog('Stack trace: ' . $e->getTraceAsString(), 'ERROR');
             return 0;
         }
     }

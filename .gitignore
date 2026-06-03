@@ -1,3 +1,15 @@
-Nothing should be ignored based on the provided file changes. The modified files ('lib/TradingLogic.php', 'trading_engine.php') are PHP source code files that should be tracked in version control. No build artifacts, dependencies, or temporary files are present in the change list.
+# Environment
+.env
+.env.local
+*.env.*
 
-Therefore, the optimized .gitignore content is empty.
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Dependencies
+node_modules/
+
+# Editors
+.vscode/

@@ -18,6 +18,17 @@ if (!defined('ROOT_DIR')) {
 }
 
 // ============================================================================
+// CHARGEMENT DE LA CONFIGURATION LOCALE (SI EXISTANTE)
+// config.local.php permet de surcharger config.php sans le modifier
+// IMPORTANT: config.local.php doit être dans .gitignore
+// ============================================================================
+
+$localConfigFile = ROOT_DIR . '/config.local.php';
+if (file_exists($localConfigFile)) {
+    require_once $localConfigFile;
+}
+
+// ============================================================================
 // CONFIGURATION GÉNÉRALE
 // ============================================================================
 

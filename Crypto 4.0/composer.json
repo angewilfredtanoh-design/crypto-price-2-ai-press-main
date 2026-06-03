@@ -1,10 +1,17 @@
 {
-    "name": "crypto/project",
-    "description": "Crypto 4.0 Project",
+    "name": "crypto4/neocryptodash",
+    "description": "NEO CRYPTO DASH - Plateforme d'analyse crypto IA avec trading virtuel",
     "type": "project",
+    "license": "MIT",
+    "version": "4.0.0",
     "autoload": {
         "psr-4": {
             "Crypto4\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Crypto4\\Tests\\": "tests/"
         }
     },
     "authors": [
@@ -13,5 +20,29 @@
             "email": "dev@crypto.local"
         }
     ],
-    "require": {}
+    "require": {
+        "php": ">=8.0",
+        "ext-pdo": "*",
+        "ext-curl": "*",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0"
+    },
+    "scripts": {
+        "test": "phpunit tests/",
+        "test:coverage": "phpunit --coverage-html tests/coverage tests/",
+        "post-install-cmd": [
+            "@php -r \"if (!file_exists('cache/.gitkeep')) { @mkdir('cache', 0755, true); file_put_contents('cache/.gitkeep', ''); }\"",
+            "@php -r \"if (!file_exists('logs/.gitkeep')) { @mkdir('logs', 0755, true); file_put_contents('logs/.gitkeep', ''); }\"",
+            "@php -r \"if (!file_exists('data/.gitkeep')) { @mkdir('data', 0755, true); file_put_contents('data/.gitkeep', ''); }\"",
+            "@php -r \"if (!file_exists('exports/.gitkeep')) { @mkdir('exports', 0755, true); file_put_contents('exports/.gitkeep', ''); }\""
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }

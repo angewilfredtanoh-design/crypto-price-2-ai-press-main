@@ -6,5 +6,5 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Crypto\\' => array($baseDir . '/src'),
+    'Crypto4\\' => array($baseDir . '/src'),
 );

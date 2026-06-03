@@ -9,48 +9,11 @@
  */
 
 define('ROOT_DIR', dirname(__FILE__));
-define('DB_FILE', ROOT_DIR . '/crypto_cache.db');
-define('LOG_FILE', ROOT_DIR . '/analysis_log.txt');
-define('MISTRAL_API_KEYS', [
-    '5qaRTj Rake',
-    'o3rG tu',
-    'vEzQM kF'
-]);
+require_once ROOT_DIR . '/config.php';
+require_once ROOT_DIR . '/lib/MistralClient.php';
 
 function logMessage($message) {
-    file_put_contents(LOG_FILE, '['.date('Y-m-d H:i:s')."] $message\n", FILE_APPEND);
-}
-
-function callMistral($messages, $model = 'mistral-small-2603', $maxTokens = 250) {
-    $keys = MISTRAL_API_KEYS;
-    foreach ($keys as $apiKey) {
-        for ($retry = 0; $retry < 3; $retry++) {
-            $ch = curl_init('https://api.mistral.ai/v1/chat/completions');
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/json',
-                'Authorization: Bearer ' . $apiKey
-            ]);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
-                'model' => $model,
-                'messages' => $messages,
-                'temperature' => 0.3,
-                'max_tokens' => $maxTokens
-            ]));
-            curl_setopt($ch, CURLOPT_TIMEOUT, 25);
-            $response = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            if ($httpCode === 200) {
-                $data = json_decode($response, true);
-                return $data['choices'][0]['message']['content'] ?? null;
-            }
-            logMessage("Échec clé " . substr($apiKey,0,8) . " HTTP $httpCode, tentative ".($retry+1));
-            sleep(1);
-        }
-    }
-    return null;
+    appLog($message, 'INFO');
 }
 
 // Calcul des indicateurs techniques avancés depuis la sparkline
@@ -108,32 +71,6 @@ function computeIndicators($sparkline) {
 try {
     $pdo = new PDO("sqlite:" . DB_FILE);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
-    // Table d'historique des analyses (pour RL)
-    $pdo->exec("CREATE TABLE IF NOT EXISTS coin_analysis_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        coin_id TEXT,
-        timestamp INTEGER,
-        price_at_analysis REAL,
-        advice TEXT,
-        score INTEGER,
-        trend_pct REAL,
-        volatility REAL,
-        rsi REAL,
-        predicted_change_pct REAL,
-        actual_change_pct REAL,
-        accuracy_score REAL
-    )");
-    $pdo->exec("CREATE INDEX IF NOT EXISTS idx_coin_time ON coin_analysis_history(coin_id, timestamp)");
-    
-    // Table pour les analyses individuelles (affichage rapide)
-    $pdo->exec("CREATE TABLE IF NOT EXISTS individual_analysis (
-        coin_id TEXT PRIMARY KEY,
-        advice TEXT,
-        trend TEXT,
-        analysis_text TEXT,
-        generated_at INTEGER
-    )");
     
     // 1) Apprentissage par renforcement : évaluer les analyses de plus de 24h
     $evaluation = $pdo->query("SELECT id, coin_id, timestamp, price_at_analysis, advice, score 
@@ -196,7 +133,7 @@ Donne un conseil d'investissement PRÉCIS sous la forme \"Achat fort / Achat / N
         ];
         
         $advice = callMistral($messages, 'mistral-small-2603', 150);
-        if (!$advice) $advice = $indic['advice_text']." : analyse technique automatique.";
+        if (!$advice) $advice = $indic['advice_text'].": analyse technique automatique.";
         
         // Prédiction de variation sur 24h (basée sur score et tendance)
         $predictedChange = round($indic['trend_pct'] * 0.6 + ($indic['score']-50)/5, 2);
@@ -218,9 +155,11 @@ Donne un conseil d'investissement PRÉCIS sous la forme \"Achat fort / Achat / N
         usleep(400000); // 0.4s entre chaque crypto pour éviter rate limiting
     }
     
-    echo "Analyses mises à jour avec RL.";
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['success' => true, 'message' => 'Analyses mises à jour avec RL']);
 } catch (Exception $e) {
     logMessage("ERREUR FATALE update_analyses: " . $e->getMessage());
-    echo "ERREUR";
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => 'ERREUR: ' . $e->getMessage()]);
 }
 ?>

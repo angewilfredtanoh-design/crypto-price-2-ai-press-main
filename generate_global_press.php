@@ -7,32 +7,8 @@
  */
 
 define('ROOT_DIR', dirname(__FILE__));
-define('DB_FILE', ROOT_DIR . '/crypto_cache.db');
-define('MISTRAL_API_KEYS', [
-    '5qaRT Rake',
-    'o3rG1zvd hytu',
-    'vEzQ uXkF'
-]);
-
-function callMistral($messages, $model='mistral-large-2512', $maxTokens=800) {
-    $keys = MISTRAL_API_KEYS;
-    foreach ($keys as $apiKey) {
-        $ch = curl_init('https://api.mistral.ai/v1/chat/completions');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey]);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['model'=>$model,'messages'=>$messages,'temperature'=>0.4,'max_tokens'=>$maxTokens]));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 35);
-        $resp = curl_exec($ch);
-        $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        if ($http === 200) {
-            $data = json_decode($resp, true);
-            return $data['choices'][0]['message']['content'] ?? null;
-        }
-    }
-    return null;
-}
+require_once ROOT_DIR . '/config.php';
+require_once ROOT_DIR . '/lib/MistralClient.php';
 
 try {
     $pdo = new PDO("sqlite:" . DB_FILE);
@@ -71,8 +47,11 @@ try {
     // Nettoyer les anciennes (garder 20 dernières)
     $pdo->exec("DELETE FROM global_analysis WHERE id NOT IN (SELECT id FROM global_analysis ORDER BY generated_at DESC LIMIT 20)");
     
-    echo "OK";
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['success' => true, 'message' => 'OK']);
 } catch (Exception $e) {
-    echo "ERREUR: " . $e->getMessage();
+    appLog("Erreur generate_global_press: " . $e->getMessage(), 'ERROR');
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => 'ERREUR: ' . $e->getMessage()]);
 }
 ?>

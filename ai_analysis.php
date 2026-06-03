@@ -2,39 +2,15 @@
 /**
  * ai_analysis.php
  * Endpoint AJAX pour :
- * - type=individual : analyse immédiate d’une crypto (bouton "Forcer analyse")
- * - type=force_global : régénération forcée de l’analyse globale
+ * - type=individual : analyse immédiate d'une crypto (bouton "Forcer analyse")
+ * - type=force_global : régénération forcée de l'analyse globale
  */
 
 header('Content-Type: application/json; charset=utf-8');
 
 define('ROOT_DIR', dirname(__FILE__));
-define('DB_FILE', ROOT_DIR . '/crypto_cache.db');
-define('MISTRAL_API_KEYS', [
-    '5qa ake',
-    'o3r tu',
-    'vEzQM XkF'
-]);
-
-function callMistral($messages, $model='mistral-small-2603', $maxTokens=200) {
-    $keys = MISTRAL_API_KEYS;
-    foreach ($keys as $apiKey) {
-        $ch = curl_init('https://api.mistral.ai/v1/chat/completions');
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey]);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['model'=>$model,'messages'=>$messages,'temperature'=>0.3,'max_tokens'=>$maxTokens]));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-        $resp = curl_exec($ch);
-        $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-        if ($http === 200) {
-            $data = json_decode($resp, true);
-            return $data['choices'][0]['message']['content'] ?? null;
-        }
-    }
-    return null;
-}
+require_once ROOT_DIR . '/config.php';
+require_once ROOT_DIR . '/lib/MistralClient.php';
 
 try {
     $pdo = new PDO("sqlite:" . DB_FILE);
@@ -56,7 +32,7 @@ try {
         }
         
         $sparkline = json_decode($sparklineJson, true);
-        // Calcul rapide des indicateurs (identique à update_analyses.php)
+        
         function quickIndicators($sparkline) {
             if (!is_array($sparkline) || count($sparkline) < 7) return null;
             $n = count($sparkline);
@@ -105,13 +81,13 @@ try {
         echo json_encode(['advice' => $advice]);
         
     } elseif ($type === 'force_global') {
-        // Forcer la génération de la revue de presse
         include_once 'generate_global_press.php';
         echo json_encode(['success' => true]);
     } else {
         echo json_encode(['error' => 'Type d\'analyse non reconnu']);
     }
 } catch (Exception $e) {
+    appLog("Erreur ai_analysis.php: " . $e->getMessage(), 'ERROR');
     echo json_encode(['error' => 'Erreur serveur interne']);
 }
 ?>

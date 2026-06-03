@@ -314,8 +314,172 @@ function initializeDatabase() {
             ('analysis_frequency_hours', '1', 'integer', 'Fréquence des analyses en heures', $now)
         ");
         
-        appLog('Database initialization completed successfully');
+        // ============================================================================
+        // NOUVELLES TABLES POUR LE SYSTÈME DE TRADING VIRTUEL COMPLET
+        // ============================================================================
         
+        // Table: virtual_portfolio (portefeuille virtuel avec 1M€ de départ)
+        $pdo->exec("CREATE TABLE IF NOT EXISTS virtual_portfolio (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            initial_capital REAL DEFAULT 1000000,
+            current_cash REAL DEFAULT 1000000,
+            total_value REAL DEFAULT 1000000,
+            total_invested REAL DEFAULT 0,
+            total_realized_pnl REAL DEFAULT 0,
+            total_unrealized_pnl REAL DEFAULT 0,
+            performance_percent REAL DEFAULT 0,
+            total_trades INTEGER DEFAULT 0,
+            winning_trades INTEGER DEFAULT 0,
+            losing_trades INTEGER DEFAULT 0,
+            win_rate REAL DEFAULT 0,
+            best_trade REAL DEFAULT 0,
+            worst_trade REAL DEFAULT 0,
+            avg_win REAL DEFAULT 0,
+            avg_loss REAL DEFAULT 0,
+            profit_factor REAL DEFAULT 0,
+            sharpe_ratio REAL DEFAULT 0,
+            max_drawdown REAL DEFAULT 0,
+            created_at INTEGER DEFAULT 0,
+            last_update INTEGER DEFAULT 0
+        )");
+        
+        // Table: virtual_positions (positions actives)
+        $pdo->exec("CREATE TABLE IF NOT EXISTS virtual_positions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            coin_id TEXT NOT NULL,
+            coin_symbol TEXT NOT NULL,
+            coin_name TEXT NOT NULL,
+            quantity REAL DEFAULT 0,
+            avg_buy_price REAL DEFAULT 0,
+            current_price REAL DEFAULT 0,
+            invested_amount REAL DEFAULT 0,
+            current_value REAL DEFAULT 0,
+            unrealized_pnl REAL DEFAULT 0,
+            pnl_percent REAL DEFAULT 0,
+            first_purchase INTEGER DEFAULT 0,
+            last_purchase INTEGER DEFAULT 0,
+            position_size_percent REAL DEFAULT 0,
+            stop_loss_price REAL DEFAULT 0,
+            take_profit_price REAL DEFAULT 0,
+            is_active INTEGER DEFAULT 1,
+            closed_at INTEGER DEFAULT 0,
+            UNIQUE(coin_id, is_active)
+        )");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_virtual_positions_active ON virtual_positions(is_active)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_virtual_positions_coin ON virtual_positions(coin_id)");
+        
+        // Table: virtual_trades (historique des trades avec justification IA)
+        $pdo->exec("CREATE TABLE IF NOT EXISTS virtual_trades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            portfolio_id INTEGER DEFAULT 1,
+            coin_id TEXT NOT NULL,
+            coin_symbol TEXT NOT NULL,
+            action TEXT NOT NULL CHECK(action IN ('BUY', 'SELL')),
+            quantity REAL DEFAULT 0,
+            price REAL DEFAULT 0,
+            total_value REAL DEFAULT 0,
+            score_trigger INTEGER DEFAULT 50,
+            ai_reasoning TEXT,
+            ai_justification TEXT,
+            timestamp INTEGER DEFAULT 0,
+            realized_pnl REAL DEFAULT 0,
+            pnl_percent REAL DEFAULT 0,
+            holding_period_hours INTEGER DEFAULT 0,
+            position_id INTEGER DEFAULT 0,
+            FOREIGN KEY (position_id) REFERENCES virtual_positions(id)
+        )");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_virtual_trades_coin ON virtual_trades(coin_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_virtual_trades_action ON virtual_trades(action)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_virtual_trades_time ON virtual_trades(timestamp)");
+        
+        // Table: trade_audits (audit RL des trades passés)
+        $pdo->exec("CREATE TABLE IF NOT EXISTS trade_audits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            trade_id INTEGER NOT NULL,
+            coin_id TEXT NOT NULL,
+            action TEXT NOT NULL,
+            trade_price REAL DEFAULT 0,
+            audit_price REAL DEFAULT 0,
+            delta_price REAL DEFAULT 0,
+            delta_percent REAL DEFAULT 0,
+            result TEXT CHECK(result IN ('WIN', 'LOSS', 'BREAK_EVEN')),
+            pnl_realized REAL DEFAULT 0,
+            verdict TEXT CHECK(verdict IN ('BON', 'MAUVAIS', 'NEUTRE')),
+            ai_analysis TEXT,
+            ai_recommendations TEXT,
+            criteria_adjustments TEXT DEFAULT '{}',
+            audited_at INTEGER DEFAULT 0,
+            FOREIGN KEY (trade_id) REFERENCES virtual_trades(id)
+        )");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_trade_audits_trade ON trade_audits(trade_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_trade_audits_result ON trade_audits(result)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_trade_audits_verdict ON trade_audits(verdict)");
+        
+        // Table: criteria_weights (pondération ajustable des critères)
+        $pdo->exec("CREATE TABLE IF NOT EXISTS criteria_weights (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            rsi_weight REAL DEFAULT 25,
+            sparkline_weight REAL DEFAULT 25,
+            volume_weight REAL DEFAULT 25,
+            market_cap_weight REAL DEFAULT 25,
+            total_weight REAL DEFAULT 100,
+            last_adjustment INTEGER DEFAULT 0,
+            adjustment_reason TEXT,
+            adjusted_by_ai TEXT,
+            trade_audit_id INTEGER DEFAULT 0,
+            FOREIGN KEY (trade_audit_id) REFERENCES trade_audits(id)
+        )");
+        
+        // Insérer les poids initiaux (25% chacun)
+        $pdo->exec("INSERT INTO criteria_weights (rsi_weight, sparkline_weight, volume_weight, market_cap_weight, total_weight, last_adjustment) 
+                    VALUES (25, 25, 25, 25, 100, $now)");
+        
+        // Initialiser le portefeuille virtuel
+        $pdo->exec("INSERT INTO virtual_portfolio (initial_capital, current_cash, total_value, created_at, last_update)
+                    VALUES (1000000, 1000000, 1000000, $now, $now)");
+
+        // ============================================================================
+        // NOUVELLES TABLES POUR L'HISTORIQUE DES ANALYSES ET AGENDA
+        // ============================================================================
+
+        // Table: analyses_history (historique complet des analyses avec audit)
+        $pdo->exec("CREATE TABLE IF NOT EXISTS analyses_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            crypto_id TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            score INTEGER NOT NULL,
+            conseil TEXT NOT NULL CHECK(conseil IN ('ACHAT', 'VENTE', 'ATTENTE')),
+            analyse_text TEXT NOT NULL,
+            sparkline_snapshot TEXT DEFAULT '[]',
+            rsi_snapshot REAL DEFAULT 50,
+            volume_snapshot REAL DEFAULT 0,
+            price_at_analysis REAL DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            was_correct INTEGER DEFAULT NULL,
+            price_at_audit REAL DEFAULT 0,
+            audit_date DATETIME DEFAULT NULL
+        )");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_history_crypto ON analyses_history(crypto_id)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_history_date ON analyses_history(created_at)");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_history_correct ON analyses_history(was_correct)");
+
+        // Table: market_reviews (revues de marché périodiques)
+        $pdo->exec("CREATE TABLE IF NOT EXISTS market_reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            review_text TEXT NOT NULL,
+            global_advice TEXT,
+            top_picks TEXT DEFAULT '[]',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            period_start DATETIME,
+            period_end DATETIME
+        )");
+        $pdo->exec("CREATE INDEX IF NOT EXISTS idx_reviews_date ON market_reviews(created_at)");
+
+        appLog('History and agenda system tables initialized successfully');
+        appLog('Virtual trading system tables initialized successfully');
+
+        appLog('Database initialization completed successfully');
+
         return $pdo;
         
     } catch (PDOException $e) {

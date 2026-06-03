@@ -8,41 +8,15 @@
  */
 
 define('ROOT_DIR', dirname(__FILE__));
-define('DB_FILE', ROOT_DIR . '/crypto_cache.db');
-define('PORTFOLIO_LOG', ROOT_DIR . '/portfolio_log.txt');
+require_once ROOT_DIR . '/config.php';
 
 function logPortfolio($msg) {
-    file_put_contents(PORTFOLIO_LOG, '['.date('Y-m-d H:i:s')."] $msg\n", FILE_APPEND);
+    appLog($msg, 'PORTFOLIO');
 }
 
 try {
     $pdo = new PDO("sqlite:" . DB_FILE);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
-    // Tables nécessaires
-    $pdo->exec("CREATE TABLE IF NOT EXISTS portfolio (
-        cash REAL DEFAULT 1000000,
-        last_update INTEGER
-    )");
-    $pdo->exec("CREATE TABLE IF NOT EXISTS holdings (
-        coin_id TEXT PRIMARY KEY,
-        amount REAL,
-        avg_buy_price REAL
-    )");
-    $pdo->exec("CREATE TABLE IF NOT EXISTS trades (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        coin_id TEXT,
-        type TEXT,
-        amount REAL,
-        price REAL,
-        timestamp INTEGER
-    )");
-    $pdo->exec("CREATE TABLE IF NOT EXISTS rl_thresholds (
-        param TEXT PRIMARY KEY,
-        value REAL
-    )");
-    $pdo->exec("INSERT OR IGNORE INTO rl_thresholds VALUES ('buy_score', 65)");
-    $pdo->exec("INSERT OR IGNORE INTO rl_thresholds VALUES ('sell_score', 35)");
     
     // Récupérer les dernières analyses (score le plus récent pour chaque crypto)
     $analyses = $pdo->query("SELECT c.id, c.current_price, a.score, a.advice 
@@ -54,10 +28,23 @@ try {
     $buyThreshold = $pdo->query("SELECT value FROM rl_thresholds WHERE param='buy_score'")->fetchColumn();
     $sellThreshold = $pdo->query("SELECT value FROM rl_thresholds WHERE param='sell_score'")->fetchColumn();
     
-    $cash = $pdo->query("SELECT cash FROM portfolio LIMIT 1")->fetchColumn();
-    if ($cash === false) {
+    if (!$buyThreshold) {
+        $pdo->exec("INSERT OR IGNORE INTO rl_thresholds (param, value) VALUES ('buy_score', 65)");
+        $buyThreshold = 65;
+    }
+    if (!$sellThreshold) {
+        $pdo->exec("INSERT OR IGNORE INTO rl_thresholds (param, value) VALUES ('sell_score', 35)");
+        $sellThreshold = 35;
+    }
+    
+    $portfolio = $pdo->query("SELECT cash, last_update FROM portfolio LIMIT 1")->fetch();
+    if (!$portfolio) {
         $pdo->exec("INSERT INTO portfolio (cash, last_update) VALUES (1000000, ".time().")");
         $cash = 1000000;
+        $lastUpdate = time();
+    } else {
+        $cash = $portfolio['cash'];
+        $lastUpdate = $portfolio['last_update'];
     }
     
     $investmentPerTrade = 5000; // 5000€ par décision
@@ -97,9 +84,9 @@ try {
     }
     $pdo->prepare("UPDATE portfolio SET cash = ?, last_update = ?")->execute([$cash, time()]);
     
-    // --- Apprentissage par renforcement : ajuster les seuils tous les 7 jours si performance améliorable ---
-    $lastAdjust = $pdo->query("SELECT last_update FROM portfolio LIMIT 1")->fetchColumn();
-    if ($lastAdjust < time() - 7*86400) {
+    // --- Apprentissage par renforcement : ajuster les seuils tous les 7 jours ---
+    $sevenDaysAgo = time() - 7*86400;
+    if ($lastUpdate < $sevenDaysAgo) {
         // Calculer la valeur totale du portefeuille (cash + holdings)
         $totalValue = $cash;
         $holdingsVal = $pdo->query("SELECT SUM(h.amount * c.current_price) FROM holdings h JOIN coins c ON h.coin_id = c.id")->fetchColumn();
@@ -116,15 +103,23 @@ try {
             $newBuy = min(85, $buyThreshold + 3);
             $newSell = max(20, $sellThreshold - 2);
         }
-        $pdo->prepare("UPDATE rl_thresholds SET value = ? WHERE param = 'buy_score'")->execute([$newBuy]);
-        $pdo->prepare("UPDATE rl_thresholds SET value = ? WHERE param = 'sell_score'")->execute([$newSell]);
+        
+        // Enregistrer l'ajustement dans rl_thresholds avec historique
+        $pdo->prepare("UPDATE rl_thresholds SET value = ?, last_adjustment = ?, adjustment_reason = ?, performance_before = ? 
+                       WHERE param = 'buy_score'")
+            ->execute([$newBuy, time(), "RL auto-adjust perf=$perf%", $perf]);
+        $pdo->prepare("UPDATE rl_thresholds SET value = ?, last_adjustment = ?, adjustment_reason = ?, performance_before = ? 
+                       WHERE param = 'sell_score'")
+            ->execute([$newSell, time(), "RL auto-adjust perf=$perf%", $perf]);
+        
         logPortfolio("RL ajustement seuils : buy $buyThreshold -> $newBuy, sell $sellThreshold -> $newSell, perf=$perf%");
-        $pdo->prepare("UPDATE portfolio SET last_update = ?")->execute([time()]);
     }
     
-    echo "Portefeuille mis à jour, cash: $cash €";
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['success' => true, 'cash' => $cash, 'message' => 'Portefeuille mis à jour']);
 } catch (Exception $e) {
     logPortfolio("ERREUR portfolio_manager: " . $e->getMessage());
-    echo "ERREUR";
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => 'ERREUR: ' . $e->getMessage()]);
 }
 ?>

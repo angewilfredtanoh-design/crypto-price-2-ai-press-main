@@ -4,7 +4,7 @@
  * Système de logging centralisé pour Crypto 4.0
  */
 
-namespace Crypto\Core;
+namespace Crypto4\Core;
 
 class Logger {
     private const LOG_LEVELS = [

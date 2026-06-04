@@ -1,86 +1,36 @@
 <?php
-/**
- * src/Core/Database.php
- * Classe de gestion de la base de données SQLite
- */
 
-namespace Crypto\Core;
+namespace Crypto4\Core;
 
 use PDO;
 use PDOException;
 
-class Database {
-    private static ?Database $instance = null;
-    private PDO $pdo;
-    
-    private function __construct() {
-        if (!defined('DB_FILE')) {
-            require_once dirname(__DIR__, 2) . '/config.php';
-        }
-        
-        try {
-            $this->pdo = new PDO("sqlite:" . DB_FILE);
-            $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            throw new \Exception("Connexion DB échouée: " . $e->getMessage());
-        }
-    }
-    
-    public static function getInstance(): Database {
+/**
+ * Gestionnaire de connexion à la base de données SQLite
+ */
+class Database
+{
+    private static ?PDO $instance = null;
+
+    public static function getInstance(): PDO
+    {
         if (self::$instance === null) {
-            self::$instance = new self();
+            try {
+                $dbFile = defined('DB_FILE') ? DB_FILE : __DIR__ . '/../../crypto_cache.db';
+                self::$instance = new PDO('sqlite:' . $dbFile);
+                self::$instance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                self::$instance->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                throw new \Exception("Erreur de connexion à la base de données: " . $e->getMessage());
+            }
         }
         return self::$instance;
     }
-    
-    public function getConnection(): PDO {
-        return $this->pdo;
-    }
-    
-    public function query(string $sql, array $params = []): \PDOStatement {
-        $stmt = $this->pdo->prepare($sql);
+
+    public static function query(string $sql, array $params = []): array
+    {
+        $stmt = self::getInstance()->prepare($sql);
         $stmt->execute($params);
-        return $stmt;
-    }
-    
-    public function fetchOne(string $sql, array $params = []): ?array {
-        $result = $this->query($sql, $params)->fetch();
-        return $result ?: null;
-    }
-    
-    public function fetchAll(string $sql, array $params = []): array {
-        return $this->query($sql, $params)->fetchAll();
-    }
-    
-    public function insert(string $table, array $data): int {
-        $columns = implode(', ', array_keys($data));
-        $placeholders = implode(', ', array_fill(0, count($data), '?'));
-        
-        $sql = "INSERT INTO {$table} ({$columns}) VALUES ({$placeholders})";
-        $this->query($sql, array_values($data));
-        
-        return (int) $this->pdo->lastInsertId();
-    }
-    
-    public function update(string $table, array $data, string $where, array $whereParams = []): int {
-        $setParts = [];
-        foreach ($data as $column => $value) {
-            $setParts[] = "{$column} = ?";
-        }
-        $setClause = implode(', ', $setParts);
-        
-        $sql = "UPDATE {$table} SET {$setClause} WHERE {$where}";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(array_merge(array_values($data), $whereParams));
-        
-        return $stmt->rowCount();
-    }
-    
-    public function delete(string $table, string $where, array $params = []): int {
-        $sql = "DELETE FROM {$table} WHERE {$where}";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->rowCount();
+        return $stmt->fetchAll();
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Crypto\Core;
+namespace Crypto4\Core;
 
 use Redis;
 use Exception;

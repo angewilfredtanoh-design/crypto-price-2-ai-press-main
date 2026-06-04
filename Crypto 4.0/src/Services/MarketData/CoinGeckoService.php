@@ -98,30 +98,74 @@ class CoinGeckoService
     }
 
     /**
-     * Fallback si l'API rate ou limite atteinte
+     * Fallback amélioré utilisant un modèle Geometric Brownian Motion simple
+     * Plus réaliste que du rand() pur (drift + volatilité log-normale)
      */
     private function generateFallbackOHLCV(int $days): array
     {
-        Logger::info("Génération de données OHLCV de fallback");
+        Logger::info("Génération de données OHLCV de fallback (Geometric Brownian Motion)");
+
         $data = [];
-        $basePrice = 45000; // Prix de départ fictif BTC-like
+        $currentPrice = 45000.0;           // Prix de départ (BTC-like)
+        $drift = 0.0003;                   // Drift journalier moyen (légèrement haussier)
+        $volatility = 0.035;               // Volatilité journalière (~3.5%)
         $now = time();
-        
+
         for ($i = $days; $i >= 0; $i--) {
             $timestamp = ($now - ($i * 86400)) * 1000;
-            $volatility = rand(800, 2000);
-            $trend = (rand(0, 1) ? 1 : -1) * rand(0, 500);
-            
-            $open = $basePrice + rand(-$volatility, $volatility);
-            $close = $open + $trend;
-            $high = max($open, $close) + rand(0, $volatility/2);
-            $low = min($open, $close) - rand(0, $volatility/2);
-            
-            $data[] = [$timestamp, $open, $high, $low, $close];
-            $basePrice = $close;
+
+            // Génération d'un rendement log-normal (Geometric Brownian Motion)
+            $random = $this->gaussianRandom();
+            $return = $drift + $volatility * $random;
+
+            $open = $currentPrice;
+            $close = $open * exp($return);
+
+            // Construction réaliste de High et Low
+            $dailyVol = abs($return) * 0.6 + 0.008; // un peu de bruit supplémentaire
+            $high = max($open, $close) * (1 + $dailyVol * mt_rand(5, 25) / 1000);
+            $low  = min($open, $close) * (1 - $dailyVol * mt_rand(5, 25) / 1000);
+
+            // Sécurité : Low ne doit jamais être négatif
+            $low = max($low, $close * 0.85);
+
+            $data[] = [$timestamp, round($open, 2), round($high, 2), round($low, 2), round($close, 2)];
+
+            $currentPrice = $close;
         }
-        
+
         return $data;
+    }
+
+    /**
+     * Génère un nombre aléatoire suivant une distribution normale (Box-Muller)
+     */
+    private function gaussianRandom(): float
+    {
+        static $useLast = false;
+        static $y2 = 0.0;
+
+        if ($useLast) {
+            $useLast = false;
+            return $y2;
+        }
+
+        $x1 = 0.0;
+        $x2 = 0.0;
+        $w  = 0.0;
+
+        do {
+            $x1 = 2.0 * mt_rand() / mt_getrandmax() - 1.0;
+            $x2 = 2.0 * mt_rand() / mt_getrandmax() - 1.0;
+            $w  = $x1 * $x1 + $x2 * $x2;
+        } while ($w >= 1.0 || $w == 0.0);
+
+        $w = sqrt((-2.0 * log($w)) / $w);
+        $y1 = $x1 * $w;
+        $y2 = $x2 * $w;
+
+        $useLast = true;
+        return $y1;
     }
 
     /**

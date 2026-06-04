@@ -5,10 +5,10 @@
  * Gestion des positions, trades, audits RL et ajustement des critères
  */
 
-namespace Crypto\Services;
+namespace Crypto4\Services;
 
-use Crypto\Core\Database;
-use Crypto\Core\MistralClient;
+use Crypto4\Core\Database;
+use Crypto4\Core\MistralClient;
 use PDO;
 
 class TradingService {
@@ -345,7 +345,7 @@ class TradingService {
             
             if (!$trade) return false;
             
-            // Vérifier si déjà audité
+            // Vérifier si déjà auditer
             $auditStmt = $this->pdo->prepare("SELECT id FROM trade_audits WHERE trade_id = ?");
             $auditStmt->execute([$tradeId]);
             if ($auditStmt->fetch()) return false; // Déjà audité

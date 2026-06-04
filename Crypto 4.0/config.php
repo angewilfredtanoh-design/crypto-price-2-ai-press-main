@@ -41,12 +41,57 @@ foreach ($dirsToCreate as $dir) {
 // CLÉS API MISTRAL - À REMPLACER PAR VOS VRAIES CLÉS
 // Format: Clés complètes du Mistral Free Tier Développeur
 // Chaque clé offre 1 milliard de tokens/mois
+// 
+// SÉCURITÉ : Utilisez des variables d'environnement ou un fichier .env
+// Ne jamais committer de clés API dans le code source !
 // ============================================================================
 
-define('DEFAULT_MISTRAL_API_KEYS', [
-    // ✅ Clé API fournie par l'utilisateur
-    'nrcTwO2J9Y09I04vgFWEVVtjg4iT7aya'
-]);
+// Charger les variables d'environnement depuis un fichier .env si présent
+$envFile = ROOT_DIR . '/.env';
+if (file_exists($envFile)) {
+    $envLines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($envLines as $line) {
+        if (strpos(trim($line), '#') === 0) continue; // Ignorer les commentaires
+        if (strpos($line, '=') !== false) {
+            list($key, $value) = explode('=', $line, 2);
+            putenv(trim($key) . '=' . trim($value));
+        }
+    }
+}
+
+// Récupérer les clés API depuis les variables d'environnement
+$mistralApiKeys = [];
+$envKey = getenv('MISTRAL_API_KEY');
+$envKeys = getenv('MISTRAL_API_KEYS');
+
+if ($envKeys) {
+    // Support pour plusieurs clés séparées par des virgules
+    $mistralApiKeys = array_map('trim', explode(',', $envKeys));
+} elseif ($envKey) {
+    // Support pour une clé unique
+    $mistralApiKeys = [$envKey];
+} else {
+    // Fallback vers les clés par défaut (à remplacer en production)
+    // ⚠️ En production, cette section ne devrait jamais être utilisée
+    $mistralApiKeys = [
+        getenv('MISTRAL_API_KEY_1') ?: null,
+        getenv('MISTRAL_API_KEY_2') ?: null,
+        getenv('MISTRAL_API_KEY_3') ?: null
+    ];
+    $mistralApiKeys = array_filter($mistralApiKeys); // Retirer les valeurs null
+    
+    if (empty($mistralApiKeys)) {
+        // Aucune clé configurée - lever une erreur en production
+        if (defined('APP_ENV') && APP_ENV === 'production') {
+            throw new Exception('Aucune clé API Mistral configurée. Définissez MISTRAL_API_KEY dans vos variables d\'environnement.');
+        }
+        // En développement, utiliser une clé placeholder (pour tests uniquement)
+        $mistralApiKeys = ['test_key_placeholder'];
+        appLog('ATTENTION: Clé API Mistral non configurée. Utilisation d\'un placeholder pour le développement.', 'WARNING');
+    }
+}
+
+define('DEFAULT_MISTRAL_API_KEYS', $mistralApiKeys);
 
 // Endpoint API Mistral
 define('MISTRAL_API_ENDPOINT', 'https://api.mistral.ai/v1/chat/completions');

@@ -1,5 +1,26 @@
-The provided input appears to have malformed file paths for the "Added files" section (containing fragments like '"Crypto' instead of valid file names). Without clear information about the actual files changed, it's impossible to determine which files should be ignored according to the rules.
+```
+# Compiled and build artifacts
+*.pyc
+__pycache__/
 
-Therefore, I cannot generate a meaningful .gitignore file based on this data.
+# Dependencies
+.venv/
+venv/
 
-Output: (empty)
+# Environment
+.env
+.env.local
+.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Crypto related (from detected changes)
+"Crypto"/
+```

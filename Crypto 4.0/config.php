@@ -1,21 +1,54 @@
 <?php
 /**
  * config.php
- * Configuration centralisée pour NEO CRYPTO DASH v3.0
- * Compatible Hostinger Mutualisé - Design Pro Futuriste
+ * Configuration centralisée pour NEO CRYPTO DASH v4.0
+ * Branche: dossier-crypto-4.0-setup
  * 
- * Fonctionnalités:
- * - Rotation intelligente des clés API Mistral
- * - 20 modèles optimisés par tâche
- * - Prompts enrichis (800-1200 mots)
- * - Logging complet
- * - Gestion d'erreurs robuste
+ * SÉCURITÉ :
+ * - Plus de clé API en dur dans le code
+ * - Chargement via variables d'environnement (.env ou panel Hostinger)
+ * - .gitignore protège les secrets
+ * 
+ * Fonctionnalités conservées :
+ * - Rotation & retry API Mistral
+ * - Mapping tâches → modèles
+ * - Config trading / technique / cache / UI
+ * - Helpers globaux (appLog, formatLargeNumber, etc.)
  */
 
 // Empêcher l'exécution directe
 if (!defined('ROOT_DIR')) {
     define('ROOT_DIR', dirname(__FILE__));
 }
+
+// ============================================================================
+// CHARGEMENT SÉCURISÉ DES SECRETS (.env + getenv)
+// ============================================================================
+
+function loadEnvFile(string $path): void {
+    if (!file_exists($path)) {
+        return;
+    }
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+        if (str_contains($line, '=')) {
+            [$key, $value] = explode('=', $line, 2);
+            $key = trim($key);
+            $value = trim($value);
+            // Ne pas écraser si déjà défini dans l'environnement
+            if (getenv($key) === false) {
+                putenv("$key=$value");
+            }
+        }
+    }
+}
+
+// Charger .env s'il existe (dev local)
+loadEnvFile(ROOT_DIR . '/.env');
 
 // ============================================================================
 // CONFIGURATION GÉNÉRALE
@@ -29,290 +62,133 @@ define('CACHE_DIR', ROOT_DIR . '/cache');
 define('DATA_DIR', ROOT_DIR . '/data');
 define('EXPORTS_DIR', ROOT_DIR . '/exports');
 
-// Créer les dossiers nécessaires avec permissions Hostinger-safe (0755)
+// Créer les dossiers nécessaires (sécurisé Hostinger 0755)
 $dirsToCreate = [CACHE_DIR, DATA_DIR, EXPORTS_DIR, ROOT_DIR . '/logs'];
 foreach ($dirsToCreate as $dir) {
     if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
+        @mkdir($dir, 0755, true);
     }
 }
 
 // ============================================================================
-// CLÉS API MISTRAL - À REMPLACER PAR VOS VRAIES CLÉS
-// Format: Clés complètes du Mistral Free Tier Développeur
-// Chaque clé offre 1 milliard de tokens/mois
+// CLÉ API MISTRAL - SÉCURISÉE (jamais en dur)
 // ============================================================================
 
-define('DEFAULT_MISTRAL_API_KEYS', [
-    // ✅ Clé API fournie par l'utilisateur
-    'nrcTwO2J9Y09I04vgFWEVVtjg4iT7aya'
-]);
-
-// Endpoint API Mistral
+define('MISTRAL_API_KEY', getenv('MISTRAL_API_KEY') ?: '');
 define('MISTRAL_API_ENDPOINT', 'https://api.mistral.ai/v1/chat/completions');
 
+if (empty(MISTRAL_API_KEY)) {
+    // Log seulement si on est en mode web (pas CLI pendant les tests)
+    if (php_sapi_name() !== 'cli') {
+        error_log('ATTENTION: MISTRAL_API_KEY non définie. Crée un fichier .env ou définis la variable d\'environnement.');
+    }
+}
+
 // ============================================================================
-// MODÈLES MISTRAL ET LEURS USAGES OPTIMAUX (20 MODÈLES)
+// MODÈLES MISTRAL RÉELS (mis à jour 2026)
+// Utilise uniquement des model_id valides sur https://api.mistral.ai
 // ============================================================================
 
 define('MISTRAL_MODELS', [
-    // 💻 Code & Développement
-    'codestral-2508' => [
-        'category' => 'code',
-        'name' => 'Code Master Ultimate',
-        'usage' => 'Auto-complétion code, FIM, syntaxes complexes',
-        'max_tokens' => 32000,
-        'cost_tier' => 'low',
-        'temperature_default' => 0.2
+    'mistral-large-latest' => [
+        'name' => 'Mistral Large Latest',
+        'max_tokens' => 128000,
+        'temperature_default' => 0.3,
+        'category' => 'flagship'
     ],
-    'devstral-2512' => [
-        'category' => 'dev_agent',
-        'name' => 'Dev Agent Pro',
-        'usage' => 'Architecture logicielle, DevOps, refactoring lourd',
+    'mistral-small-latest' => [
+        'name' => 'Mistral Small Latest',
         'max_tokens' => 32000,
-        'cost_tier' => 'medium',
-        'temperature_default' => 0.3
+        'temperature_default' => 0.3,
+        'category' => 'fast'
     ],
-    'devstral-medium-2507' => [
-        'category' => 'dev_agent',
-        'name' => 'Dev Agent Medium',
-        'usage' => 'Débogage quotidien, patterns complexes',
+    'codestral-latest' => [
+        'name' => 'Codestral Latest',
         'max_tokens' => 32000,
-        'cost_tier' => 'medium',
-        'temperature_default' => 0.3
+        'temperature_default' => 0.2,
+        'category' => 'code'
     ],
-    'devstral-small-2507' => [
-        'category' => 'dev_agent',
-        'name' => 'Dev Agent Light',
-        'usage' => 'Tests unitaires, CI/CD, micro-tâches',
+    'ministral-8b-latest' => [
+        'name' => 'Ministral 8B',
         'max_tokens' => 32000,
-        'cost_tier' => 'low',
-        'temperature_default' => 0.2
+        'temperature_default' => 0.3,
+        'category' => 'edge'
     ],
-    
-    // 🧠 Flagships - Raisonnement & Haute Performance
-    'mistral-large-2512' => [
-        'category' => 'flagship',
-        'name' => 'Mistral Brain Ultra',
-        'usage' => 'Analyses globales, raisonnement complexe, function calling',
-        'max_tokens' => 32000,
-        'cost_tier' => 'high',
-        'temperature_default' => 0.3
-    ],
-    'mistral-large-2411' => [
-        'category' => 'flagship',
-        'name' => 'Mistral Brain Legacy',
-        'usage' => 'Workflows enterprise stables, contextes massifs',
-        'max_tokens' => 32000,
-        'cost_tier' => 'high',
-        'temperature_default' => 0.3
-    ],
-    
-    // ⚖️ Modèles Intermédiaires & Équilibrés
-    'mistral-medium-2508' => [
-        'category' => 'intermediate',
-        'name' => 'Corporate Engine Pro',
-        'usage' => 'Analyses individuelles, tâches administratives complexes',
-        'max_tokens' => 32000,
-        'cost_tier' => 'medium',
-        'temperature_default' => 0.4
-    ],
-    'mistral-medium-2505' => [
-        'category' => 'intermediate',
-        'name' => 'Corporate Engine Standard',
-        'usage' => 'RAG, synthèse documents, bases de connaissances',
-        'max_tokens' => 32000,
-        'cost_tier' => 'medium',
-        'temperature_default' => 0.4
-    ],
-    
-    // ⚡ Vitesse, Automatisation & Éco (Small)
-    'mistral-small-2603' => [
-        'category' => 'small',
-        'name' => 'Fast Automate Turbo',
-        'usage' => 'Classification, tagging, routage rapide, extraction masse',
-        'max_tokens' => 32000,
-        'cost_tier' => 'low',
-        'temperature_default' => 0.3
-    ],
-    'mistral-small-2506' => [
-        'category' => 'small',
-        'name' => 'Fast Automate Standard',
-        'usage' => 'Scraping API, traitement flux, clustering',
-        'max_tokens' => 32000,
-        'cost_tier' => 'low',
-        'temperature_default' => 0.3
-    ],
-    
-    // 🤖 Agents & Orchestration
-    'magistral-medium-2509' => [
-        'category' => 'agent',
-        'name' => 'Agent Router Medium',
-        'usage' => 'Orchestration multi-agents, décision autonome',
-        'max_tokens' => 32000,
-        'cost_tier' => 'medium',
-        'temperature_default' => 0.5
-    ],
-    'magistral-small-2509' => [
-        'category' => 'agent',
-        'name' => 'Agent Router Small',
-        'usage' => 'Routage rapide multi-agents, distribution prompts',
-        'max_tokens' => 32000,
-        'cost_tier' => 'low',
-        'temperature_default' => 0.5
-    ],
-    
-    // 🎨 Créativité & Expérimentations
-    'labs-mistral-small-creative' => [
-        'category' => 'creative',
-        'name' => 'Creative Writer',
-        'usage' => 'Blog, storytelling, brainstorming, liberté stylistique',
-        'max_tokens' => 32000,
-        'cost_tier' => 'low',
-        'temperature_default' => 0.8
-    ],
-    
-    // 👁️ Vision & Analyse Graphique (Multimodal)
-    'pixtral-large-2411' => [
-        'category' => 'vision',
-        'name' => 'Vision Analyzer Max',
-        'usage' => 'Analyse UI, diagrammes, plans, précision géométrique',
-        'max_tokens' => 32000,
-        'cost_tier' => 'high',
-        'temperature_default' => 0.3
-    ],
-    'pixtral-12b-2409' => [
-        'category' => 'vision',
-        'name' => 'Vision Analyzer Light',
-        'usage' => 'OCR, détection objets, sous-titrage images',
-        'max_tokens' => 32000,
-        'cost_tier' => 'medium',
-        'temperature_default' => 0.3
-    ],
-    
-    // 📱 Edge Computing (Local)
-    'ministral-14b-2512' => [
-        'category' => 'edge',
-        'name' => 'Local Engine Heavy',
-        'usage' => 'Processing local, low-memory, raisonnement compact',
-        'max_tokens' => 32000,
-        'cost_tier' => 'low',
-        'temperature_default' => 0.3
-    ],
-    'ministral-8b-2512' => [
-        'category' => 'edge',
-        'name' => 'Local Engine Medium',
-        'usage' => 'Applications mobiles, embarqué, all-rounder',
-        'max_tokens' => 32000,
-        'cost_tier' => 'low',
-        'temperature_default' => 0.3
-    ],
-    'ministral-3b-2512' => [
-        'category' => 'edge',
-        'name' => 'Local Engine Micro',
-        'usage' => 'Commande vocale, complétion basique, ultra-léger',
-        'max_tokens' => 32000,
-        'cost_tier' => 'low',
-        'temperature_default' => 0.2
-    ],
-    
-    // 🎙️ Audio & Traitement Vocal
-    'voxtral-small-2507' => [
-        'category' => 'audio',
-        'name' => 'Audio Core Small',
-        'usage' => 'Analyse sémantique audio fine, intonations, contexte',
-        'max_tokens' => 32000,
-        'cost_tier' => 'medium',
-        'temperature_default' => 0.3
-    ],
-    'voxtral-mini-2507' => [
-        'category' => 'audio',
-        'name' => 'Audio Core Mini',
-        'usage' => 'Traitement flux audio rapide, commandes vocales',
-        'max_tokens' => 32000,
-        'cost_tier' => 'low',
-        'temperature_default' => 0.2
+    'pixtral-large-latest' => [
+        'name' => 'Pixtral Large (Vision)',
+        'max_tokens' => 128000,
+        'temperature_default' => 0.3,
+        'category' => 'vision'
     ]
 ]);
 
 // ============================================================================
-// MAPPING DES TÂCHES VERS LES MODÈLES OPTIMAUX
+// MAPPING DES TÂCHES → MODÈLES (mis à jour avec modèles réels)
 // ============================================================================
 
 define('TASK_MODEL_MAPPING', [
-    // Analyses principales
-    'global_analysis' => 'mistral-large-2512',
-    'individual_analysis' => 'mistral-medium-2508',
-    'deep_analysis' => 'mistral-large-2512',
-    
-    // Blog & Contenu
-    'blog_post' => 'labs-mistral-small-creative',
-    'newsletter' => 'labs-mistral-small-creative',
-    'social_media' => 'labs-mistral-small-creative',
-    
-    // Analyses spécialisées
-    'sentiment_analysis' => 'mistral-small-2603',
-    'risk_analysis' => 'mistral-medium-2508',
-    'correlation_analysis' => 'mistral-medium-2505',
-    'whale_detection' => 'mistral-small-2603',
-    'arbitrage_opportunity' => 'mistral-small-2603',
-    'macro_insights' => 'mistral-large-2512',
-    'prediction_engine' => 'mistral-large-2512',
-    'news_summary' => 'mistral-small-2506',
-    'defi_analysis' => 'mistral-medium-2508',
-    'nft_analysis' => 'mistral-small-2603',
-    'tax_report' => 'mistral-medium-2505',
-    'performance_review' => 'mistral-medium-2508',
-    'technical_indicators' => 'mistral-small-2603',
-    
-    // Trading & Portfolio
-    'trade_signal' => 'mistral-medium-2508',
-    'portfolio_optimization' => 'mistral-large-2512',
-    'rebalancing_advice' => 'mistral-medium-2508',
-    
-    // Code & Technique
-    'code_generation' => 'devstral-2512',
-    'code_review' => 'devstral-medium-2507',
-    'data_extraction' => 'mistral-small-2603',
-    'api_integration' => 'devstral-small-2507',
-    
-    // Alertes & Notifications
-    'price_alert' => 'mistral-small-2603',
-    'market_alert' => 'mistral-small-2603',
-    'news_alert' => 'mistral-small-2506'
+    'global_analysis'        => 'mistral-large-latest',
+    'individual_analysis'    => 'mistral-small-latest',
+    'deep_analysis'          => 'mistral-large-latest',
+    'blog_post'              => 'mistral-small-latest',
+    'newsletter'             => 'mistral-small-latest',
+    'social_media'           => 'mistral-small-latest',
+    'sentiment_analysis'     => 'mistral-small-latest',
+    'risk_analysis'          => 'mistral-large-latest',
+    'correlation_analysis'   => 'mistral-small-latest',
+    'whale_detection'        => 'mistral-small-latest',
+    'arbitrage_opportunity'  => 'mistral-small-latest',
+    'macro_insights'         => 'mistral-large-latest',
+    'prediction_engine'      => 'mistral-large-latest',
+    'news_summary'           => 'mistral-small-latest',
+    'defi_analysis'          => 'mistral-small-latest',
+    'nft_analysis'           => 'mistral-small-latest',
+    'tax_report'             => 'mistral-small-latest',
+    'performance_review'     => 'mistral-small-latest',
+    'technical_indicators'   => 'mistral-small-latest',
+    'trade_signal'           => 'mistral-small-latest',
+    'portfolio_optimization' => 'mistral-large-latest',
+    'rebalancing_advice'     => 'mistral-small-latest',
+    'code_generation'        => 'codestral-latest',
+    'code_review'            => 'codestral-latest',
+    'data_extraction'        => 'mistral-small-latest',
+    'api_integration'        => 'codestral-latest',
+    'price_alert'            => 'mistral-small-latest',
+    'market_alert'           => 'mistral-small-latest',
+    'news_alert'             => 'mistral-small-latest'
 ]);
 
 // ============================================================================
-// PARAMÈTRES DE ROTATION API
+// PARAMÈTRES DE ROTATION & RESILIENCE API
 // ============================================================================
 
 define('API_ROTATION_CONFIG', [
-    'max_retries' => 3,
-    'retry_delay_ms' => 1000,
-    'blacklist_duration_seconds' => 300,
-    'rate_limit_per_minute' => 60,
-    'timeout_seconds' => 30,
-    'user_agent' => 'NEOCryptoDash/3.0 (Hostinger; Production; Mistral-Free-Tier)',
-    'fallback_model' => 'mistral-small-2603'
+    'max_retries'               => 3,
+    'retry_delay_ms'            => 1000,
+    'blacklist_duration_seconds'=> 300,
+    'rate_limit_per_minute'     => 60,
+    'timeout_seconds'           => 30,
+    'user_agent'                => 'NEOCryptoDash/4.0 (Hostinger; Production)',
+    'fallback_model'            => 'mistral-small-latest'
 ]);
 
 // ============================================================================
-// PARAMÈTRES DE TRADING VIRTUEL
+// PARAMÈTRES DE TRADING VIRTUEL (1M€ de départ)
 // ============================================================================
 
 define('TRADING_CONFIG', [
-    'initial_capital' => 1000000,
+    'initial_capital'      => 1000000,
     'investment_per_trade' => 5000,
-    'max_position_size' => 50000,
-    'max_positions' => 20,
-    'stop_loss_percent' => 15,
-    'take_profit_percent' => 25,
-    'rebalance_threshold' => 10,
-    'default_buy_score' => 65,
-    'default_sell_score' => 35,
-    'trailing_stop_enabled' => true,
-    'dca_enabled' => true,
-    'dca_levels' => 3
+    'max_position_size'    => 50000,
+    'max_positions'        => 20,
+    'stop_loss_percent'    => 15,
+    'take_profit_percent'  => 25,
+    'rebalance_threshold'  => 10,
+    'default_buy_score'    => 65,
+    'default_sell_score'   => 35,
+    'trailing_stop_enabled'=> true,
+    'dca_enabled'          => true,
+    'dca_levels'           => 3
 ]);
 
 // ============================================================================
@@ -320,20 +196,20 @@ define('TRADING_CONFIG', [
 // ============================================================================
 
 define('TECHNICAL_CONFIG', [
-    'rsi_period' => 14,
-    'macd_fast' => 12,
-    'macd_slow' => 26,
-    'macd_signal' => 9,
-    'ema_short' => 12,
-    'ema_long' => 26,
-    'bollinger_period' => 20,
-    'bollinger_std' => 2,
-    'volatility_lookback' => 7,
-    'trend_lookback' => 7,
-    'score_trend_weight' => 0.35,
-    'score_volatility_weight' => 0.20,
-    'score_rsi_weight' => 0.25,
-    'score_volume_weight' => 0.20
+    'rsi_period'            => 14,
+    'macd_fast'             => 12,
+    'macd_slow'             => 26,
+    'macd_signal'           => 9,
+    'ema_short'             => 12,
+    'ema_long'              => 26,
+    'bollinger_period'      => 20,
+    'bollinger_std'         => 2,
+    'volatility_lookback'   => 7,
+    'trend_lookback'        => 7,
+    'score_trend_weight'    => 0.35,
+    'score_volatility_weight'=> 0.20,
+    'score_rsi_weight'      => 0.25,
+    'score_volume_weight'   => 0.20
 ]);
 
 // ============================================================================
@@ -341,13 +217,13 @@ define('TECHNICAL_CONFIG', [
 // ============================================================================
 
 define('CACHE_CONFIG', [
-    'coin_data_ttl' => 600,
-    'analysis_ttl' => 3600,
-    'global_analysis_ttl' => 7200,
+    'coin_data_ttl'             => 600,
+    'analysis_ttl'              => 3600,
+    'global_analysis_ttl'       => 7200,
     'portfolio_update_interval' => 3600,
-    'max_historical_days' => 90,
-    'sparkline_points' => 168,
-    'batch_size' => 25
+    'max_historical_days'       => 90,
+    'sparkline_points'          => 168,
+    'batch_size'                => 25
 ]);
 
 // ============================================================================
@@ -355,65 +231,63 @@ define('CACHE_CONFIG', [
 // ============================================================================
 
 define('UI_CONFIG', [
-    'app_name' => 'NEO CRYPTO DASH',
-    'app_version' => '3.0.0',
-    'app_tagline' => 'IA Mistral · Analyses RL · Portefeuille virtuel 1M€',
-    'theme_primary' => '#3b82f6',
-    'theme_success' => '#10b981',
-    'theme_danger' => '#ef4444',
-    'theme_warning' => '#f59e0b',
-    'theme_dark' => '#111827',
-    'items_per_page' => 25,
-    'enable_animations' => true,
-    'enable_notifications' => true
+    'app_name'           => 'NEO CRYPTO DASH',
+    'app_version'        => '4.0.0',
+    'app_tagline'        => 'IA Mistral · Analyses RL · Portefeuille virtuel 1M€',
+    'theme_primary'      => '#3b82f6',
+    'theme_success'      => '#10b981',
+    'theme_danger'       => '#ef4444',
+    'theme_warning'      => '#f59e0b',
+    'theme_dark'         => '#111827',
+    'items_per_page'     => 25,
+    'enable_animations'  => true,
+    'enable_notifications'=> true
 ]);
 
 // ============================================================================
-// FONCTIONS UTILITAIRES GLOBALES
+// FONCTIONS UTILITAIRES GLOBALES (conservées et améliorées)
 // ============================================================================
 
 /**
  * Logger centralisé compatible Hostinger
- * @param string $message Message à logger
- * @param string $level Niveau de log (INFO, WARNING, ERROR, CRITICAL)
  */
-function appLog($message, $level = 'INFO') {
+function appLog(string $message, string $level = 'INFO'): void {
     $timestamp = date('Y-m-d H:i:s');
     $logLine = "[$timestamp] [$level] $message" . PHP_EOL;
-    
+
+    $target = LOG_FILE;
     if ($level === 'ERROR' || $level === 'CRITICAL') {
-        file_put_contents(ERROR_LOG, $logLine, FILE_APPEND | LOCK_EX);
+        $target = ERROR_LOG;
     } elseif ($level === 'API') {
-        file_put_contents(API_LOG, $logLine, FILE_APPEND | LOCK_EX);
-    } else {
-        file_put_contents(LOG_FILE, $logLine, FILE_APPEND | LOCK_EX);
+        $target = API_LOG;
     }
+
+    @file_put_contents($target, $logLine, FILE_APPEND | LOCK_EX);
 }
 
 /**
  * Gestion d'erreur centralisée
  */
-function handleError($errno, $errstr, $errfile, $errline) {
+function handleError(int $errno, string $errstr, string $errfile, int $errline): bool {
     appLog("PHP Error [$errno]: $errstr in $errfile on line $errline", 'ERROR');
     return false;
 }
-
 set_error_handler('handleError');
 
 /**
  * Nettoyer les anciennes entrées de cache
  */
-function cleanupCache() {
+function cleanupCache(): void {
     try {
         $pdo = new PDO('sqlite:' . DB_FILE);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        
+
         $cutoff = time() - (CACHE_CONFIG['max_historical_days'] * 86400);
         $pdo->exec("DELETE FROM historical_snapshots WHERE snapshot_time < $cutoff");
         $pdo->exec("DELETE FROM global_analysis WHERE generated_at < $cutoff");
         $pdo->exec("DELETE FROM coin_analysis_history WHERE timestamp < $cutoff");
         $pdo->exec("DELETE FROM api_usage_logs WHERE timestamp < $cutoff");
-        
+
         appLog("Cache cleanup completed - deleted entries older than " . CACHE_CONFIG['max_historical_days'] . " days");
     } catch (Exception $e) {
         appLog("Cache cleanup failed: " . $e->getMessage(), 'ERROR');
@@ -423,47 +297,45 @@ function cleanupCache() {
 /**
  * Vérifier et initialiser la base de données
  */
-function ensureDatabaseInitialized() {
+function ensureDatabaseInitialized(): void {
     if (!file_exists(DB_FILE)) {
         require_once ROOT_DIR . '/init_db.php';
-        initializeDatabase();
+        if (function_exists('initializeDatabase')) {
+            initializeDatabase();
+        }
     }
 }
 
 /**
  * Formater un nombre avec séparateurs français
  */
-function formatNumber($number, $decimals = 2) {
-    return number_format($number, $decimals, ',', ' ');
+function formatNumber($number, int $decimals = 2): string {
+    return number_format((float)$number, $decimals, ',', ' ');
 }
 
 /**
- * Formater une grande valeur (K, M, Md, B)
+ * Formater une grande valeur marché (K, M, Md, B, T) - version améliorée
  */
-function formatLargeNumber($number) {
-    if ($number >= 1e12) {
-        return round($number / 1e12, 2) . ' B€';
-    } elseif ($number >= 1e9) {
-        return round($number / 1e9, 2) . ' Md€';
-    } elseif ($number >= 1e6) {
-        return round($number / 1e6, 2) . ' M€';
-    } elseif ($number >= 1e3) {
-        return round($number / 1e3, 2) . ' K€';
-    }
+function formatLargeNumber($number): string {
+    $number = (float)$number;
+    if ($number >= 1e12) return round($number / 1e12, 2) . ' T€';
+    if ($number >= 1e9)  return round($number / 1e9, 2)  . ' Md€';
+    if ($number >= 1e6)  return round($number / 1e6, 2)  . ' M€';
+    if ($number >= 1e3)  return round($number / 1e3, 2)  . ' K€';
     return round($number, 2) . '€';
 }
 
 /**
- * Obtenir le modèle optimal pour une tâche
+ * Obtenir le modèle optimal pour une tâche donnée
  */
-function getModelForTask($taskName) {
+function getModelForTask(string $taskName): string {
     return TASK_MODEL_MAPPING[$taskName] ?? API_ROTATION_CONFIG['fallback_model'];
 }
 
 /**
- * Calculer le score de confiance basé sur l'historique
+ * Calculer un score de confiance basé sur l'historique (placeholder améliorable)
  */
-function calculateConfidenceScore($coinId, $pdo) {
+function calculateConfidenceScore(string $coinId, PDO $pdo): int {
     try {
         $stmt = $pdo->prepare("SELECT AVG(accuracy_score) as avg_accuracy, COUNT(*) as count 
                                FROM coin_analysis_history 
@@ -471,28 +343,33 @@ function calculateConfidenceScore($coinId, $pdo) {
                                LIMIT 20");
         $stmt->execute([$coinId]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
+
         if (!$result || $result['count'] < 3) {
-            return 50;
+            return 50; // valeur par défaut raisonnable
         }
-        
-        $weight = min(1, $result['count'] / 20);
-        return round(($result['avg_accuracy'] * $weight) + (50 * (1 - $weight)));
+
+        $weight = min(1.0, $result['count'] / 20.0);
+        return (int) round(($result['avg_accuracy'] * $weight) + (50 * (1 - $weight)));
     } catch (Exception $e) {
         return 50;
     }
 }
 
 // ============================================================================
-// CHARGEMENT AUTOMATIQUE AU STARTUP
+// CHARGEMENT AUTOMATIQUE AU DÉMARRAGE
 // ============================================================================
 
 date_default_timezone_set('Europe/Paris');
 
 appLog('═══════════════════════════════════════════════════════');
-appLog('NEO CRYPTO DASH v' . UI_CONFIG['app_version'] . ' configuration loaded');
-appLog('Timezone: Europe/Paris | PHP Version: ' . phpversion());
+appLog('NEO CRYPTO DASH v' . UI_CONFIG['app_version'] . ' configuration loaded (SECURE MODE)');
+appLog('Timezone: Europe/Paris | PHP: ' . phpversion());
 appLog('Database: ' . DB_FILE);
+if (empty(MISTRAL_API_KEY)) {
+    appLog('ATTENTION: Aucune clé Mistral définie !', 'WARNING');
+} else {
+    appLog('Mistral API Key: configurée (longueur ' . strlen(MISTRAL_API_KEY) . ')');
+}
 appLog('═══════════════════════════════════════════════════════');
 
 ?>

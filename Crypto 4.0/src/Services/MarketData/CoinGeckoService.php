@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Services\MarketData;
+namespace Crypto4\Services\MarketData;
 
-use App\Core\Logger;
-use App\Core\CacheManager;
+use Crypto4\Core\Logger;
+use Crypto4\Core\CacheManager;
 
 /**
  * Service pour récupérer les données de marché réelles via CoinGecko API

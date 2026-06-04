@@ -1,0 +1,42 @@
+name: Crypto 4.0 CI
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        extensions: pdo_sqlite, curl, json, mbstring
+        coverage: none
+
+    - name: Install Dependencies
+      run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+    - name: Create Test DB
+      run: |
+        touch tests/test.db
+        chmod 666 tests/test.db
+
+    - name: Run Tests
+      run: ./vendor/bin/phpunit --configuration phpunit.xml.dist
+      env:
+        APP_ENV: testing
+        MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+
+    - name: Static Analysis (Optional)
+      run: |
+        if [ -f composer.json ]; then
+          composer require --dev phpstan/phpstan --no-interaction || true
+          ./vendor/bin/phpstan analyse src --level 5 || true
+        fi

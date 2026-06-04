@@ -1,0 +1,258 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "crypto4-monitoring",
+    "title": "Crypto 4.0 - Monitoring Dashboard",
+    "tags": ["crypto", "trading", "php"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "15s",
+    "panels": [
+      {
+        "id": 1,
+        "type": "stat",
+        "title": "System Health Status",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "min(crypto4_component_health_status)",
+            "legendFormat": "Health",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 0.5},
+                {"color": "green", "value": 1}
+              ]
+            },
+            "mappings": [
+              {"options": {"0": {"text": "DOWN"}, "0.5": {"text": "WARNING"}, "1": {"text": "HEALTHY"}}, "type": "value"}
+            ]
+          }
+        }
+      },
+      {
+        "id": 2,
+        "type": "stat",
+        "title": "Total P&L (EUR)",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+        "targets": [
+          {
+            "expr": "crypto4_trading_pnl_total_eur",
+            "legendFormat": "P&L",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": -10000},
+                {"color": "yellow", "value": 0},
+                {"color": "green", "value": 1000}
+              ]
+            },
+            "unit": "currencyEUR",
+            "decimals": 2
+          }
+        }
+      },
+      {
+        "id": 3,
+        "type": "stat",
+        "title": "Open Positions",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "crypto4_database_open_positions",
+            "legendFormat": "Positions",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "none",
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "id": 4,
+        "type": "stat",
+        "title": "Total Trades",
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+        "targets": [
+          {
+            "expr": "crypto4_database_trades_total",
+            "legendFormat": "Trades",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "none",
+            "decimals": 0
+          }
+        }
+      },
+      {
+        "id": 5,
+        "type": "timeseries",
+        "title": "Component Health Over Time",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+        "targets": [
+          {
+            "expr": "crypto4_component_health_status",
+            "legendFormat": "{{component}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "min": 0,
+            "max": 1
+          }
+        }
+      },
+      {
+        "id": 6,
+        "type": "timeseries",
+        "title": "Response Times (ms)",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+        "targets": [
+          {
+            "expr": "crypto4_component_response_time_seconds * 1000",
+            "legendFormat": "{{component}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "ms"
+          }
+        }
+      },
+      {
+        "id": 7,
+        "type": "gauge",
+        "title": "Cache Hit Rate",
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 12},
+        "targets": [
+          {
+            "expr": "rate(crypto4_cache_hits_total[5m]) / (rate(crypto4_cache_hits_total[5m]) + rate(crypto4_cache_misses_total[5m])) * 100",
+            "legendFormat": "Hit Rate %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 50},
+                {"color": "green", "value": 80}
+              ]
+            },
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "id": 8,
+        "type": "stat",
+        "title": "Memory Usage",
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 12},
+        "targets": [
+          {
+            "expr": "crypto4_system_memory_usage_bytes",
+            "legendFormat": "Used",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "bytes"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "type": "stat",
+        "title": "Disk Free Space",
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 12},
+        "targets": [
+          {
+            "expr": "crypto4_system_disk_free_bytes",
+            "legendFormat": "Free",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 10737418240},
+                {"color": "green", "value": 53687091200}
+              ]
+            },
+            "unit": "bytes"
+          }
+        }
+      },
+      {
+        "id": 10,
+        "type": "table",
+        "title": "Component Status Details",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 18},
+        "targets": [
+          {
+            "expr": "crypto4_component_health_status",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true, "__name__": true, "instance": true, "job": true}
+            }
+          }
+        ]
+      }
+    ],
+    "templating": {"list": []},
+    "annotations": {
+      "list": [
+        {
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": false,
+          "iconColor": "blue",
+          "name": "Annotations & Alerts",
+          "target": {"limit": 100, "matchAny": false, "tags": [], "type": "dashboard"},
+          "type": "dashboard"
+        }
+      ]
+    }
+  },
+  "overwrite": true
+}

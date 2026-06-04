@@ -1,0 +1,17 @@
+{
+    "name": "crypto/project",
+    "description": "Crypto 4.0 Project",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Crypto4\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Crypto Dev",
+            "email": "dev@crypto.local"
+        }
+    ],
+    "require": {}
+}

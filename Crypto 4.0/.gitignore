@@ -1,0 +1,42 @@
+# Crypto 4.0 / NEO CRYPTO DASH - .gitignore
+# Sécurité & Secrets
+config.php
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+
+# Dossiers générés au runtime
+vendor/
+cache/
+logs/
+data/
+exports/
+*.db
+*.sqlite
+*.log
+
+# Composer
+composer.lock
+
+# IDE & Éditeurs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests & Coverage
+phpunit.xml
+coverage/
+.phpunit.result.cache
+
+# Backups & temporaires
+*.bak
+*.tmp
+*~

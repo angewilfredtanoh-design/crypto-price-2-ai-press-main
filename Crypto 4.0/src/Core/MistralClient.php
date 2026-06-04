@@ -5,7 +5,7 @@
  * Pour Crypto 4.0
  */
 
-namespace Crypto\Core;
+namespace Crypto4\Core;
 
 if (!defined('ROOT_DIR')) {
     require_once dirname(__DIR__, 2) . '/config.php';
